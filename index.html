@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>6-2반 경고</title>
 <style>
 @font-face{font-family:"Gmarket Sans";src:url(data:font/woff2;base64,d09GMk9UVE8AAAQEAAwAAAAABaQAAAO4AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAADYRkGh4GYABcATYCJAMYBAYFgUgHIBckGBAb0QRRlCNOAXxRYBvTByvCh8YCQjkX+pDAyGIttzIrczVejDYUNIFQKjR6M9B3TyuIaq3K6p4DQBQKyN09oWP7at0zhidUrLkPLNKlkh7uRbYDFyDJCFIQ2FyG+MJduGTuwiUwzyn7DtjiNGAPMJVk0gU8ff/tdnJ0t2dnyUHekloSBfQDaYuTJGB78Lbe01tKhW2ZJZJYax5F1lZbcrHP/7l0G+2NooAG4JU0oCr6OC2jCUWLxhkc3TtAO4FTPY9djiVTViVEPGYESyEing1LDeJ63r9WUv9lD6ktk7XTfB/C3z9k2Iln+Ko6qlVTmKjMrlE/NbdV726vwGviSEvMbxx5XtOmGGvmS/e1dgoId2VW+yHh6vVH79v/LJ5AA89Ii1OOrIEcho28Gxh3DWzmBwKO9mgEE63RkmojRI2dJYc3Du476Ii+2EOTBE2jF5HRFWXtoo2jOsGhENo1QkG4GwjG4AD/01rOotY9Einta5g6lIY6UTk4ymONnWRLMSTCqXS8G1r/T7rIq1VBnnwfpQHx+RwvSeglFfnBb84MwTv5eLqh/1x4hiHJzjMNFdJgnmWAxgiMEXLZlj89RLRR84u2nDZVQ1TzuvNdl+snLOvuScv+N6xmkMPP+KCL2qW/cs3ea8/2vWGyyaImDrpHr1+8ylvb5I5GYmxhWHZGTLtot4j5+0iIPwV0Q0CHHUEqsk487+eFLFL+YFoamduIR7ef37n07+8Mqu40YlArx1QxdRhFKZSCDqNQjGJ0uIAUpFCHC1TsmGIFWy9d/DZgYO/XZyYVzDPMMRmLryUXzxc4iMnUGWDGrI5RKuNpzPwMc0x2pLZVFtri/LcQK9SSFNMDxRTFV8odURNhDKYwM6kDnQ82Iy/+NmrKQwBXAEAQ7BEsJA5pfU3dwg7UIUzDEUA+kyUqk+CoCZwIH6Nz/riTQtqtQB25uzJKR8o4CrQkEpfXTdIpfQkhmAjT+C3uOKKwJw2fZrbbts+36uwa+t6x+9znje4xdhYhOFJeGLc38cKER+mvmKm/AbwdsH0AvrzEu+4/rRU9g4IjaqRgQsZj2NrHQP3rtZ+306colTekqbOEqfNE6gfU4dEFpRPFAbDIJ4RYTigcoc1r+onxdvgz7siecCrpRAlzmEI3TBVTOVzOdKbi4lNAEa62wqU7c5mYhWd7lQzGkmIqUFB4oE8T8vFqyqcoH8ZUyrnwzKIYF0+1i556ur27J8kmgOKJtmcbL77tJHt3sm6/DMme7KqsqJ8KpTolAAA=) format("woff2");font-weight:700;font-style:normal;font-display:swap}
@@ -151,6 +157,8 @@ ul.names li{align-items:center;padding:6px 0}
 .toast{position:fixed;display:flex;align-items:center;gap:12px;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){.card{transition:transform .12s}.card:hover{transform:translateY(-2px)}}
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <header>
@@ -180,15 +188,111 @@ ul.names li{align-items:center;padding:6px 0}
 <div id="modalRoot"></div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (() => {
+/* ---------- Supabase 저장소 ----------
+   board_docs 표 하나에 (collection, id, data)로 저장한다.
+   아래 db 객체는 페이지의 나머지 코드가 쓰는 collection()/doc()/onSnapshot 모양을 그대로 흉내 낸다. */
+const SUPABASE_URL = 'https://pyjqvzvvnpsbsknayzgl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5anF2enZ2bnBzYnNrbmF5emdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzMjk4NjAsImV4cCI6MjEwNjkwNTg2MH0.r4EN-jaynVoKaGLbk8Mpe5zIIyyhnj5FhILRCGKfkqE';
+function makeSupabaseDb(){
+  if (!window.supabase || !window.supabase.createClient) return null;
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  const T = 'board_docs';
+  const cache = new Map();                 // collection -> Map(id -> data)
+  const listeners = new Map();             // collection -> Set(fn)
+  const errHandlers = new Set();
+  let loaded = false, live = false;
+  const col = c => { if (!cache.has(c)) cache.set(c, new Map()); return cache.get(c); };
+  const snap = c => ({ docs: [...col(c)].map(([id, data]) => ({ id, exists: true, data: () => data })) });
+  const fire = c => { if (loaded) (listeners.get(c) || []).forEach(fn => { try { fn(snap(c)); } catch (e) { console.error(e); } }); };
+  const check = r => { if (r.error) throw r.error; return r; };
+  const mintId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
+  async function fetchAll(){
+    const rows = []; const page = 1000;
+    for (let from = 0; ; from += page){
+      const r = check(await client.from(T).select('collection,id,data').order('collection').order('id').range(from, from + page - 1));
+      rows.push(...r.data);
+      if (r.data.length < page) break;
+    }
+    return rows;
+  }
+  async function refresh(){
+    const rows = await fetchAll();
+    const next = new Map();
+    rows.forEach(r => { if (!next.has(r.collection)) next.set(r.collection, new Map()); next.get(r.collection).set(r.id, r.data || {}); });
+    const names = new Set([...cache.keys(), ...next.keys(), ...listeners.keys()]);
+    const first = !loaded; loaded = true;
+    names.forEach(c => {
+      const a = JSON.stringify([...col(c)]), b = JSON.stringify([...(next.get(c) || new Map())]);
+      cache.set(c, next.get(c) || new Map());
+      if (first || a !== b) fire(c);
+    });
+  }
+  const start = refresh().catch(e => { console.error(e); errHandlers.forEach(fn => fn(e)); });
+
+  // 실시간: 다른 기기에서 바뀐 내용이 바로 들어온다
+  try {
+    client.channel('board-docs')
+      .on('postgres_changes', { event: '*', schema: 'public', table: T }, p => {
+        if (!loaded) return;
+        if (p.eventType === 'DELETE'){ const o = p.old || {}; if (o.collection && o.id){ col(o.collection).delete(o.id); fire(o.collection); } }
+        else { const n = p.new || {}; if (n.collection && n.id){ col(n.collection).set(n.id, n.data || {}); fire(n.collection); } }
+      })
+      .subscribe(status => { live = status === 'SUBSCRIBED'; });
+  } catch (e) { console.error(e); }
+  // 안전망: 실시간이 끊겨 있으면 15초마다, 연결돼 있어도 2분마다 다시 읽는다
+  let lastSync = Date.now();
+  setInterval(() => {
+    if (document.hidden) return;
+    if (Date.now() - lastSync < (live ? 120000 : 15000)) return;
+    lastSync = Date.now(); refresh().catch(e => console.error(e));
+  }, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden){ lastSync = Date.now(); refresh().catch(e => console.error(e)); } });
+
+  const docRef = (c, id) => ({
+    id, path: c + '/' + id,
+    async set(data){ col(c).set(id, data); fire(c); check(await client.from(T).upsert({ collection: c, id, data, updated_at: new Date().toISOString() })); },
+    async update(patch){
+      await start;
+      const cur = col(c).get(id); if (!cur) throw new Error('기록을 찾을 수 없어요. 새로고침한 뒤 다시 해 주세요.');
+      const data = { ...cur, ...patch }; col(c).set(id, data); fire(c);
+      check(await client.from(T).upsert({ collection: c, id, data, updated_at: new Date().toISOString() }));
+    },
+    async delete(){ col(c).delete(id); fire(c); check(await client.from(T).delete().eq('collection', c).eq('id', id)); }
+  });
+  return {
+    collection: c => ({
+      doc: id => docRef(c, id || mintId()),
+      async add(data){ const ref = docRef(c, mintId()); await ref.set(data); return ref; },
+      onSnapshot(next, error){
+        if (!listeners.has(c)) listeners.set(c, new Set());
+        listeners.get(c).add(next); if (error) errHandlers.add(error);
+        if (loaded) next(snap(c));
+        return () => listeners.get(c).delete(next);
+      }
+    }),
+    doc: path => { const i = path.indexOf('/'); return docRef(path.slice(0, i), path.slice(i + 1)); },
+    async checkPassword(pw){ const r = check(await client.rpc('check_board_password', { pw })); return r.data === true; },
+    async setPassword(oldPw, newPw){ const r = check(await client.rpc('set_board_password', { old_pw: oldPw, new_pw: newPw })); return r.data === true; }
+  };
+}
+
+
 const PW_SALT = '6-2반-경고:';
 const DEFAULT_PW_HASH = '4fea21c173d92c61a62c2d56a3082371674da83efaa6d147624cc1778c1a220b'; // '0000'
 async function hashPw(pw){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PW_SALT + pw));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
-async function checkPw(pw){ try { return (await hashPw(pw)) === (state.pwHash || DEFAULT_PW_HASH); } catch { return false; } }
+async function checkPw(pw){
+  try {
+    if (state.db && !state.local) return await state.db.checkPassword(pw);   // Supabase가 확인 (비밀번호는 페이지에 없음)
+    return (await hashPw(pw)) === (state.pwHash || DEFAULT_PW_HASH);
+  } catch (e) { console.error(e); return false; }
+}
 const SEEN_KEY = 'class-notice-seen';
 const CLEARED_KEY = 'class-notice-cleared';
 const PERM_KEY = 'class-permission-holder';
@@ -284,10 +388,10 @@ const api = {
     if (state.local){ const id = newId(); state.notices.push({ id, ...d }); render(); return id; }
     const ref = await state.db.collection('notices').add(d); return ref.id;
   },
-  async setPassword(pw){
-    const h = await hashPw(pw);
-    if (state.local){ state.pwHash = h; return; }
-    await state.db.doc('config/access').set({ pw_hash: h, updated_at: now() });
+  async setPassword(pw, curPw){
+    if (state.local){ state.pwHash = await hashPw(pw); return; }
+    const ok = await state.db.setPassword(curPw, pw);
+    if (!ok) throw new Error('비밀번호를 바꾸지 못했어요.');
   },
   async addAppeal(wid, appellant, content){
     const d = { warning_id: wid, appellant, content, status: 'pending', created_at: now(), decided_at: null };
@@ -423,7 +527,7 @@ function render(){
   document.getElementById('bellBtn').setAttribute('aria-label', pc ? `알림 ${pc}개` : '알림');
 
   const st = document.getElementById('status');
-  if (state.local){ st.hidden = false; st.className = 'notice'; st.textContent = '지금은 공용 저장소에 연결되지 않아 이 화면에서만 기록돼요. 새로고침하면 사라져요.'; }
+  if (state.local){ st.hidden = false; st.className = 'notice'; st.textContent = '저장소에 연결하지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요. 지금 바꾼 내용은 저장되지 않아요.'; }
   else if (!ready){ st.hidden = false; st.className = 'notice'; st.textContent = '학생 명단을 불러오는 중이에요…'; }
   else st.hidden = true;
 
@@ -769,8 +873,8 @@ modalRoot.addEventListener('submit', e => {
     if (n1 !== n2) return err('새 비밀번호 두 칸이 서로 달라요.');
     checkPw(cur).then(async ok => {
       if (!ok) return err('지금 비밀번호가 맞지 않아요.');
-      try { await api.setPassword(n1); state.view = 'app'; render(); toast('비밀번호를 바꿨어요'); }
-      catch (e){ console.error(e); err('비밀번호를 저장하지 못했어요. 비밀번호는 이 페이지를 만든 선생님 계정에서만 바꿀 수 있어요.'); }
+      try { await api.setPassword(n1, cur); state.view = 'app'; render(); toast('비밀번호를 바꿨어요'); }
+      catch (e){ console.error(e); err('비밀번호를 저장하지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요.'); }
     });
   }
 });
@@ -779,11 +883,11 @@ modalRoot.addEventListener('submit', e => {
 render();
 (async () => {
   let db = null;
-  try { db = await window.claude?.use?.('db'); } catch {}
+  try { db = makeSupabaseDb(); } catch (e) { console.error(e); }
   if (!db){ state.local = true; return render(); }
   state.db = db;
   const map = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const onErr = e => { console.error(e); const st = document.getElementById('status'); st.hidden = false; st.className = 'notice err'; st.textContent = '데이터를 불러오지 못했어요. 잠시 후 새로고침해 주세요.'; };
+  const onErr = e => { console.error(e); const st = document.getElementById('status'); st.hidden = false; st.className = 'notice err'; st.textContent = '데이터를 불러오지 못했어요. Supabase 설정(SQL 실행)이 끝났는지 확인하고 새로고침해 주세요.'; };
   const seen = new Set();
   const mark = k => { if (!seen.has(k)){ seen.add(k); state.loaded++; } };
   db.collection('students').onSnapshot(s => { state.students = map(s); mark('s'); render(); }, onErr);
@@ -791,7 +895,8 @@ render();
   db.collection('permission_holders').onSnapshot(s => { state.holders = map(s); mark('h'); render(); }, onErr);
   db.collection('appeals').onSnapshot(s => { state.appeals = map(s); render(); }, onErr);
   db.collection('notices').onSnapshot(s => { state.notices = map(s); render(); }, onErr);
-  db.doc('config/access').onSnapshot(d => { state.pwHash = d.exists ? (d.data().pw_hash || null) : null; }, e => console.error(e));
 })();
 })();
 </script>
+</body>
+</html>
